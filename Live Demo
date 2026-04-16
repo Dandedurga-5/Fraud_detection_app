@@ -1,0 +1,42 @@
+
+---
+
+# ☁️ 6. DEPLOY ONLINE (FREE 🔥)
+
+Use 👉 **:contentReference[oaicite:0]{index=0}**
+
+## Steps:
+
+### 🔹 Step 1: Upload to GitHub
+Go to 👉 **:contentReference[oaicite:1]{index=1}**
+
+- Create new repo → `fraud-detection-app`
+- Upload:
+  - app.py  
+  - model.pkl  
+  - scaler.pkl  
+  - requirements.txt  
+
+---
+
+### 🔹 Step 2: Deploy
+
+Go to 👉 **:contentReference[oaicite:2]{index=2}**
+
+1. Click **New App**
+2. Connect GitHub
+3. Select repo
+4. Choose `app.py`
+5. Click **Deploy**
+
+---
+
+# 🎯 FINAL OUTPUT
+
+You’ll get:
+- 🌐 Live Website (share in LinkedIn)
+- 💼 GitHub Project
+- 📊 Real ML App
+
+---
+oduct 💼🔥
