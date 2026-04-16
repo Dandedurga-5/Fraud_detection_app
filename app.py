@@ -1,6 +1,8 @@
 import streamlit as st
 import numpy as np
+import pandas as pd
 import pickle
+import matplotlib.pyplot as plt
 
 # ==============================
 # LOAD MODEL & SCALER
@@ -11,55 +13,116 @@ scaler = pickle.load(open("scaler.pkl", "rb"))
 # ==============================
 # PAGE CONFIG
 # ==============================
-st.set_page_config(page_title="Fraud Detection App", layout="centered")
+st.set_page_config(page_title="AI Fraud Detection", layout="wide")
 
 st.title("💳 AI Fraud Detection System")
-st.markdown("Detect fraudulent transactions using Machine Learning")
+st.markdown("Detect fraudulent transactions using Machine Learning 🚀")
 
 # ==============================
-# INPUT SECTION
+# SIDEBAR MENU
 # ==============================
-st.header("Enter Transaction Details")
-
-# Time + Amount (IMPORTANT FIX)
-time = st.number_input("⏱️ Time", value=0.0)
-amount = st.number_input("💰 Transaction Amount", value=0.0)
-
-st.subheader("Transaction Features (V1 - V28)")
-
-features = []
-for i in range(1, 29):
-    val = st.number_input(f"V{i}", value=0.0)
-    features.append(val)
+menu = st.sidebar.radio("Navigation", ["🔍 Single Prediction", "📂 Bulk Prediction"])
 
 # ==============================
-# PREDICTION
+# SINGLE PREDICTION
 # ==============================
-if st.button("🔍 Predict Transaction"):
+if menu == "🔍 Single Prediction":
 
-    try:
-        # Combine inputs (FIXED: includes Time)
+    st.header("Enter Transaction Details")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        time = st.number_input("⏱️ Time", value=0.0)
+    with col2:
+        amount = st.number_input("💰 Amount", value=0.0)
+
+    st.subheader("Features (V1 - V28)")
+
+    cols = st.columns(4)
+    features = []
+
+    for i in range(28):
+        with cols[i % 4]:
+            val = st.number_input(f"V{i+1}", value=0.0)
+            features.append(val)
+
+    if st.button("🔍 Predict"):
+
         input_data = np.array([[time, amount] + features])
-
-        # Scale input
         input_scaled = scaler.transform(input_data)
 
-        # Predict
         prediction = model.predict(input_scaled)
-        probability = model.predict_proba(input_scaled)[0][1]
+        prob = model.predict_proba(input_scaled)[0][1]
 
-        st.subheader("Prediction Result")
+        st.subheader("Result")
 
         if prediction[0] == 1:
-            st.error(f"⚠️ Fraudulent Transaction Detected!\n\nProbability: {probability:.2f}")
+            st.error(f"⚠️ Fraud Detected (Probability: {prob:.2f})")
         else:
-            st.success(f"✅ Legitimate Transaction\n\nProbability of Fraud: {probability:.2f}")
+            st.success(f"✅ Normal Transaction (Fraud Prob: {prob:.2f})")
 
-    except Exception as e:
-        st.error(f"Error: {e}")
+# ==============================
+# BULK PREDICTION (CSV UPLOAD)
+# ==============================
+elif menu == "📂 Bulk Prediction":
+
+    st.header("Upload CSV File")
+
+    uploaded_file = st.file_uploader("Upload your dataset", type=["csv"])
+
+    if uploaded_file is not None:
+        df = pd.read_csv(uploaded_file)
+
+        st.subheader("Preview Data")
+        st.write(df.head())
+
+        try:
+            # Drop target column if exists
+            if "Class" in df.columns:
+                df = df.drop("Class", axis=1)
+
+            # Scale data
+            scaled_data = scaler.transform(df)
+
+            # Predict
+            predictions = model.predict(scaled_data)
+            probabilities = model.predict_proba(scaled_data)[:, 1]
+
+            df["Prediction"] = predictions
+            df["Fraud_Probability"] = probabilities
+
+            st.subheader("Prediction Results")
+            st.write(df.head())
+
+            # ==============================
+            # VISUALIZATION
+            # ==============================
+            st.subheader("Fraud Distribution")
+
+            fraud_count = df["Prediction"].value_counts()
+
+            plt.figure()
+            plt.bar(fraud_count.index.astype(str), fraud_count.values)
+            plt.title("Fraud vs Normal Transactions")
+            plt.xlabel("Class (0 = Normal, 1 = Fraud)")
+            plt.ylabel("Count")
+            st.pyplot(plt)
+
+            # Download results
+            csv = df.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 Download Results",
+                data=csv,
+                file_name="fraud_predictions.csv",
+                mime="text/csv"
+            )
+
+        except Exception as e:
+            st.error(f"Error: {e}")
 
 # ==============================
 # FOOTER
 # ==============================
 st.markdown("---")
-st.info("This app uses an ML model trained on financial transaction data.")
+st.info("Built with ❤️ using Machine Learning & Streamlit")
